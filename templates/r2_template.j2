@@ -1,0 +1,29 @@
+{% for intf in interfaces %}
+interface {{ intf.name }}
+{% if intf.vrf is defined %}
+ ip vrf forwarding {{ intf.vrf }}
+{% endif %}
+{% if intf.ip_address == 'dhcp' %}
+ ip address dhcp
+{% else %}
+ ip address {{ intf.ip_address }} {{ intf.subnet_mask }}
+{% endif %}
+ ip nat {{ intf.nat }}
+ no shutdown
+{% endfor %}
+
+router ospf {{ ospf.process_id }} vrf {{ ospf.vrf }}
+ router-id {{ ospf.router_id }}
+{% for net in ospf.networks %}
+ network {{ net.ip }} {{ net.wildcard }} area {{ net.area }}
+{% endfor %}
+ default-information originate always
+
+ip route vrf {{ static_route.vrf }} {{ static_route.prefix }} {{ static_route.mask }} {{ static_route.interface }}
+
+access-list {{ nat_acl.id }} permit {{ nat_acl.source }} {{ nat_acl.wildcard }}
+ip nat inside source list {{ nat_acl.id }} interface {{ nat_acl.out_intf }} vrf {{ nat_acl.vrf }} overload
+
+access-list {{ vty_acl.id }} permit {{ vty_acl.source }} {{ vty_acl.wildcard }}
+line vty 0 4
+ access-class {{ vty_acl.id }} in

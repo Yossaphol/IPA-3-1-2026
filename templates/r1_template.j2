@@ -1,0 +1,16 @@
+{% for intf in interfaces %}
+interface {{ intf.name }}
+ ip vrf forwarding {{ intf.vrf }}
+ ip address {{ intf.ip_address }} {{ intf.subnet_mask }}
+ no shutdown
+{% endfor %}
+
+router ospf {{ ospf.process_id }} vrf {{ ospf.vrf }}
+ router-id {{ ospf.router_id }}
+{% for net in ospf.networks %}
+ network {{ net.ip }} {{ net.wildcard }} area {{ net.area }}
+{% endfor %}
+
+access-list {{ vty_acl.id }} permit {{ vty_acl.source }} {{ vty_acl.wildcard }}
+line vty 0 4
+ access-class {{ vty_acl.id }} in
